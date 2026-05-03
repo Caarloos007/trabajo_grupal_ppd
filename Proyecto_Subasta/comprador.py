@@ -1,40 +1,67 @@
 import socket
 import threading
+import time
 
-def escuchar_subasta(sock):
-    #Uso de threading para recibir datos sin bloquear la consola
+HOST = "127.0.0.1"
+PORT = 65432
+
+puja_en_curso = True
+tiempo_espera = 0
+
+
+def escuchar(sock):
+    global puja_en_curso, tiempo_espera
+    
     while True:
         try:
-            data = sock.recv(1024)
-            if not data:
+            msg = sock.recv(1024).decode()
+            if not msg:
                 break
-            #Registro en consola de la actividad (Logs)
-            print(f"\n[EVENTO RECIBIDO]: {data.decode('utf-8')}")
-            print("Escribe 'puja' para participar o 'salir': ", end="")
+            print(f"\n📢 {msg}")
+            
+            if "🚀 SUBASTA INICIADA" in msg:
+                puja_en_curso = True
+                tiempo_espera = 10
+            elif "🏆 SUBASTA TERMINADA" in msg or "🏁 Subasta terminada" in msg:
+                puja_en_curso = False
+                tiempo_espera = 0
+            elif "🔄 Reiniciando subasta" in msg:
+                puja_en_curso = True
+                tiempo_espera = 10
         except:
             break
 
-def conectar_comprador():
-    host = '127.0.0.1'
-    port = 65432
+
+def cliente():
+    global puja_en_curso, tiempo_espera
     
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
-            s.connect((host, port))
-            print("--- CONECTADO AL SISTEMA DE SUBASTAS ---")
-            
-            # Iniciamos el hilo de escucha
-            hilo = threading.Thread(target=escuchar_subasta, args=(s,), daemon=True)
-            hilo.start()
-            
+            s.connect((HOST, PORT))
+            print("Conectado a la subasta")
+
+            threading.Thread(target=escuchar, args=(s,), daemon=True).start()
+
             while True:
-                opcion = input("Escribe 'puja' para participar o 'salir': ")
-                if opcion.lower() == 'salir':
-                    break
-                elif opcion.lower() == 'puja':
-                    print("[INFO] Puja registrada localmente.")
+                if puja_en_curso:
+                    print(f"\n⏰ Tienes 10 segundos para pujar (escribe tu puja o Enter para pasar):")
+                    entrada = input()
+
+                    if entrada.lower() == "salir":
+                        break
+
+                    if entrada and entrada.isdigit():
+                        mensaje = f"PUJA:{entrada}"
+                        s.sendall(mensaje.encode())
+                    elif entrada:
+                        print("Introduce un número válido")
+                else:
+                    print("\nEsperando próxima subasta...")
+                    time.sleep(1)
+
         except ConnectionRefusedError:
-            print("[ERROR] El subastador no está en línea.")
+            print("Servidor no disponible")
+
 
 if __name__ == "__main__":
-    conectar_comprador()
+    cliente()
