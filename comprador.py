@@ -27,7 +27,11 @@ def escuchar(sock):
                 paso_mostrado = False
             elif "🏆 SUBASTA TERMINADA" in msg or "🏁 Subasta terminada" in msg:
                 puja_en_curso = False
-                esperando_mostrado = False
+                if not esperando_mostrado:
+                    print("\n⏳ Esperando próxima subasta...")
+                    esperando_mostrado = True
+                paso_enviado = False
+                paso_mostrado = False
             elif "🔄 Reiniciando subasta" in msg:
                 puja_en_curso = True
                 esperando_mostrado = False
@@ -57,18 +61,16 @@ def cliente():
                         threading.Event().wait(1)
                         continue
 
-                    entrada = input("\n💰 Puja (número), 'paso' o 'salir': ").strip().lower()
+                    entrada = input("\n💰 Puja (número) o 'paso': ").strip().lower()
 
-                    if entrada == "salir":
-                        break
-                    elif entrada == "paso":
+                    if entrada == "paso":
                         s.sendall("PASO".encode())
                         paso_enviado = True
                     elif entrada.isdigit():
                         mensaje = f"PUJA:{entrada}"
                         s.sendall(mensaje.encode())
                     elif entrada:
-                        print("❌ Introduce un número, 'paso' o 'salir'")
+                        print("❌ Introduce un número o 'paso'")
                 else:
                     if not esperando_mostrado:
                         print("\n⏳ Esperando próxima subasta...")

@@ -53,10 +53,9 @@ def manejar_cliente(conn, addr):
                     if addr not in respuestas_ronda:
                         respuestas_ronda[addr] = "PASO"
                         clientes_paso += 1
-                    activos_restantes = len(clientes) - sum(1 for v in respuestas_ronda.values() if v == "PASO")
                 
                 broadcast(f"⏭️  {addr} ha pasado")
-                print(f"⏭️  {addr} ha pasado | Compradores activos restantes: {activos_restantes}")
+                print(f"⏭️  {addr} ha pasado")
 
             elif data.startswith("PUJA:"):
                 if not subasta_activa:
