@@ -1,8 +1,8 @@
-# 🔨 Sistema de Subastas Distribuidas en Tiempo Real
+# Sistema de Subastas Distribuidas en Tiempo Real
 
 [cite_start]Este proyecto consiste en una aplicación distribuida basada en una arquitectura **Cliente-Servidor** con comportamiento **Pub/Sub**[cite: 19]. [cite_start]Permite gestionar subastas en tiempo real a través de sockets TCP, permitiendo que múltiples compradores compitan por un producto configurado por un subastador central[cite: 1].
 
-## 🚀 Características Técnicas Implementadas
+## Características Técnicas Implementadas
 
 * [cite_start]**Threading & Sockets:** Manejo de conexiones concurrentes para permitir múltiples compradores simultáneos[cite: 1, 19].
 * [cite_start]**Arquitectura Pub/Sub:** El subastador (publicador) notifica cambios de estado y nuevas pujas a todos los compradores (suscriptores)[cite: 1, 22].
@@ -11,7 +11,7 @@
 * [cite_start]**Sincronización:** Uso de `threading.Lock` para garantizar la integridad de los datos al modificar la lista de clientes y las pujas[cite: 19, 22].
 * [cite_start]**Logs en tiempo real:** Registro detallado de eventos (conexiones, pujas, ganadores) en cada terminal[cite: 1, 25].
 
-## 💻 Instrucciones de Ejecución
+## Instrucciones de Ejecución
 
 Sigue estos pasos en terminales separadas:
 
