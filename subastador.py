@@ -2,29 +2,36 @@ import socket
 import threading
 import time
 
+"Socket para comunicación"
+"Threading para que el servidor haga varias cosas a la vez"
+"Lock, actua como un semaforo para evitar que dos procesos modifiquen la lista al mismo tiempo"
+"=Errores de memoria"
+
 HOST = "127.0.0.1"
 PORT = 65432
 
-clientes = []
-lock = threading.Lock()
+clientes = [] #Lista donde guardamos a todos los conectados 
+lock = threading.Lock() #Lock para que no se peleen por la lista de clientes 
 
 subasta_activa = False
 producto_actual = ""
-mejor_puja = 0
-mejor_cliente = None
+mejor_puja = 0 #Variables que gaurdan quien va ganando 
+mejor_cliente = None #Variables que gaurdan quien va ganando
+
+
 
 # Registro de respuestas en la ronda actual
 respuestas_ronda = {}  # {cliente_addr: "PUJA" o "PASO"}
 clientes_paso = 0
 
 
-def broadcast(msg):
+def broadcast(msg): 
     with lock:
-        for c in clientes[:]:
+        for c in clientes[:]:  #Este for recorre a todos los clientes y les manda el mensaje 
             try:
                 c.sendall(msg.encode())
             except:
-                clientes.remove(c)
+                clientes.remove(c)   #Sí alguien se desconecto, el except lo saca de la lista para que no de error 
 
 
 def manejar_cliente(conn, addr):
@@ -35,7 +42,7 @@ def manejar_cliente(conn, addr):
     while True:
         try:
             # Usar timeout para no bloquear indefinidamente
-            conn.settimeout(1)
+            conn.settimeout(1).    #El servidor se queda esperando a que el cliente diga algo 
             try:
                 data = conn.recv(1024).decode().strip()
             except socket.timeout:
@@ -54,8 +61,8 @@ def manejar_cliente(conn, addr):
                         respuestas_ronda[addr] = "PASO"
                         clientes_paso += 1
                 
-                broadcast(f"⏭️  {addr} ha pasado")
-                print(f"⏭️  {addr} ha pasado")
+                broadcast(f"  {addr} ha pasado")
+                print(f"  {addr} ha pasado")
 
             elif data.startswith("PUJA:"):
                 if not subasta_activa:
@@ -65,7 +72,7 @@ def manejar_cliente(conn, addr):
                 try:
                     valor = int(data.split(":")[1])
 
-                    if valor >= mejor_puja + 10:
+                    if valor >= mejor_puja + 10:   #Filtro de seguridad. Si no cumple, el servidor lo rechaza 
                         mejor_puja = valor
                         mejor_cliente = addr
                         
@@ -75,9 +82,9 @@ def manejar_cliente(conn, addr):
                                     clientes_paso -= 1
                             respuestas_ronda[addr] = "PUJA"
 
-                        broadcast(f"🔥 NUEVA MEJOR PUJA: ${mejor_puja} por {addr}")
+                        broadcast(f" NUEVA MEJOR PUJA: ${mejor_puja} por {addr}")
                     else:
-                        conn.sendall(f"❌ Puja muy baja. Debe ser +10 sobre {mejor_puja}".encode())
+                        conn.sendall(f" Puja muy baja. Debe ser +10 sobre {mejor_puja}".encode())
 
                 except:
                     conn.sendall("Error en la puja".encode())
@@ -96,13 +103,13 @@ def manejar_cliente(conn, addr):
     conn.close()
 
 
-def esperar_pujas():
+def esperar_pujas():   #Creamos un hilo especial para detectar cuando el admin le da a Enter 
     global subasta_activa, mejor_puja, mejor_cliente, producto_actual, respuestas_ronda, clientes_paso
     
     respuestas_ronda.clear()
     clientes_paso = 0
     
-    print(f"\n📋 Ronda abierta. Clientes conectados: {len(clientes)}")
+    print(f"\n Ronda abierta. Clientes conectados: {len(clientes)}")
     print("Esperando respuestas de los clientes...")
     print("(Presiona Enter para terminar la ronda)")
     
@@ -111,26 +118,27 @@ def esperar_pujas():
         global subasta_activa
         input()  # Espera a que presione Enter
         subasta_activa = False
-        print("✅ Ronda terminada por administrador")
+        print(" Ronda terminada por administrador")
     
     thread_enter = threading.Thread(target=leer_enter, daemon=True)
     thread_enter.start()
     
     # Esperar a que termine la ronda (admin presiona enter o se cumpla la condición automática)
+    #Admin no presiona Enter, servidor se queda en este while esperando ofertas. 
     while subasta_activa:
         time.sleep(0.5)
     
     # La puja ha terminado
     if mejor_cliente:
-        mensaje = f"🏆 SUBASTA TERMINADA. Ganador {mejor_cliente} con ${mejor_puja}"
+        mensaje = f" SUBASTA TERMINADA. Ganador {mejor_cliente} con ${mejor_puja}"
         broadcast(mensaje)
         print(f"\n{mensaje}")
     else:
-        broadcast("🏁 Subasta terminada sin pujas")
-        print("\n🏁 Subasta terminada sin pujas")
+        broadcast(" Subasta terminada sin pujas")
+        print("\n Subasta terminada sin pujas")
 
 
-def iniciar_subasta():
+def iniciar_subasta(): #Pide el nombre del producto y el precio base por consola. Subasta comienza. 
     global subasta_activa, producto_actual, mejor_puja, mejor_cliente
 
     print("\n--- CONFIGURAR SUBASTA ---")
@@ -140,7 +148,7 @@ def iniciar_subasta():
 
     subasta_activa = False
 
-    print(f"\n📋 Producto configurado: {producto_actual} | Precio mínimo: ${mejor_puja}")
+    print(f"\n Producto configurado: {producto_actual} | Precio mínimo: ${mejor_puja}")
     print(f"Clientes conectados actualmente: {len(clientes)}")
     
     # Permitir que el subastador inicie la subasta manualmente
@@ -149,14 +157,14 @@ def iniciar_subasta():
         
         if cmd == "iniciar":
             if len(clientes) == 0:
-                print("⚠️  Advertencia: No hay clientes conectados")
+                print("  Advertencia: No hay clientes conectados")
                 confirm = input("¿Continuar de todas formas? (s/n): ").lower().strip()
                 if confirm != "s":
                     continue
             
             subasta_activa = True
-            broadcast(f"🚀 SUBASTA INICIADA: {producto_actual} | Precio mínimo: ${mejor_puja}")
-            print(f"🚀 Subasta iniciada: {producto_actual}")
+            broadcast(f" SUBASTA INICIADA: {producto_actual} | Precio mínimo: ${mejor_puja}")
+            print(f" Subasta iniciada: {producto_actual}")
             print("Presiona Enter para terminar la ronda")
             break
         elif cmd == "cancelar":
@@ -173,12 +181,12 @@ def iniciar_subasta():
         cmd = input("\n¿Otro artículo (nuevo) o cerrar? Escribe 'nuevo' o 'cerrar': ").lower().strip()
 
         if cmd == "cerrar":
-            broadcast("📴 Subasta cerrada por el administrador")
-            print("\n📴 Subasta cerrada")
+            broadcast(" Subasta cerrada por el administrador")
+            print("\n Subasta cerrada")
             break
         elif cmd == "nuevo":
-            broadcast("🔄 Reiniciando subasta...")
-            print("\n🔄 Próximo artículo...")
+            broadcast(" Reiniciando subasta...")
+            print("\n Próximo artículo...")
             iniciar_subasta()
             break
         else:
@@ -200,7 +208,7 @@ def servidor():
             with lock:
                 clientes.append(conn)
 
-            print(f"👤 Cliente conectado: {addr} (Total: {len(clientes)})")
+            print(f" Cliente conectado: {addr} (Total: {len(clientes)})")
 
             threading.Thread(
                 target=manejar_cliente,
@@ -232,14 +240,14 @@ def iniciar_subasta():
         
         if cmd == "iniciar":
             if len(clientes) == 0:
-                print("⚠️  Advertencia: No hay clientes conectados")
+                print("  Advertencia: No hay clientes conectados")
                 confirm = input("¿Continuar de todas formas? (s/n): ").lower().strip()
                 if confirm != "s":
                     continue
             
             subasta_activa = True
-            broadcast(f"🚀 SUBASTA INICIADA: {producto_actual} | Precio mínimo: ${mejor_puja}")
-            print(f"🚀 Subasta iniciada: {producto_actual}")
+            broadcast(f" SUBASTA INICIADA: {producto_actual} | Precio mínimo: ${mejor_puja}")
+            print(f" Subasta iniciada: {producto_actual}")
             break
         elif cmd == "cancelar":
             print("Subasta cancelada")
@@ -255,12 +263,12 @@ def iniciar_subasta():
         cmd = input("\n¿Otro artículo (nuevo) o cerrar? Escribe 'nuevo' o 'cerrar': ").lower().strip()
 
         if cmd == "cerrar":
-            broadcast("📴 Subasta cerrada por el administrador")
-            print("\n📴 Subasta cerrada")
+            broadcast(" Subasta cerrada por el administrador")
+            print("\n Subasta cerrada")
             break
         elif cmd == "nuevo":
-            broadcast("🔄 Reiniciando subasta...")
-            print("\n🔄 Próximo artículo...")
+            broadcast(" Reiniciando subasta...")
+            print("\n Próximo artículo...")
             iniciar_subasta()
             break
         else:
