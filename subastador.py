@@ -127,11 +127,11 @@ def esperar_pujas():   #Creamos un hilo especial para detectar cuando el admin l
     
     # La puja ha terminado
     if mejor_cliente:
-        mensaje = f"🏆 SUBASTA TERMINADA. Ganador {mejor_cliente} con ${mejor_puja}"
+        mensaje = f" SUBASTA TERMINADA. Ganador {mejor_cliente} con ${mejor_puja}"
         broadcast(mensaje)
         print(f"\n{mensaje}")
     else:
-        broadcast("🏁 Subasta terminada sin pujas")
+        broadcast(" Subasta terminada sin pujas")
         print("\nSubasta terminada sin pujas")
 
 
@@ -163,7 +163,7 @@ def iniciar_subasta(): #Pide el nombre del producto y el precio base por consola
                     continue
             
             subasta_activa = True
-            broadcast(f"🚀 SUBASTA INICIADA: {producto_actual} | Precio mínimo: ${mejor_puja}")
+            broadcast(f" SUBASTA INICIADA: {producto_actual} | Precio mínimo: ${mejor_puja}")
             print(f"Subasta iniciada: {producto_actual}")
             break
         elif cmd == "cancelar":
