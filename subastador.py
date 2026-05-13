@@ -42,7 +42,7 @@ def manejar_cliente(conn, addr):
     while True:
         try:
             # Usar timeout para no bloquear indefinidamente
-            conn.settimeout(1).    #El servidor se queda esperando a que el cliente diga algo 
+            conn.settimeout(1)    #El servidor se queda esperando a que el cliente diga algo 
             try:
                 data = conn.recv(1024).decode().strip()
             except socket.timeout:
